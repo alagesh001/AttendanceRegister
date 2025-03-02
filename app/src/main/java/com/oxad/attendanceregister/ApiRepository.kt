@@ -6,7 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class ApiRepository() {
-    suspend fun markMyAttendance( gymid: Long,userid:Long): Result<UserRegisterModel> {
+    suspend fun markMyAttendance( gymid: String,userid:Long): Result<UserRegisterModel> {
         Log.e("jadfadsf","Api called $gymid $userid")
 
         return safeApiCall {

@@ -11,6 +11,6 @@ interface ApiService {
     @POST("markAttendance") // Adjust this to match your backend endpoint
    suspend fun markAttendance(
         @Field("userid") userid: Long,
-        @Field("gymid") gymid: Long
+        @Field("gymid") gymid: String
     ): UserRegisterModel
 }

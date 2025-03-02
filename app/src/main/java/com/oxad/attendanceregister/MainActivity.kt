@@ -39,6 +39,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.gson.Gson
 import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.ExecutorService
@@ -82,7 +83,7 @@ class MainActivity : ComponentActivity() {
                     scannedText = result
                     isScanning = false // Stop scanning after detection
                     valueIs = result
-                    apicallmarkattendance()
+                   apicallmarkattendance()
                 }
             }
 
@@ -104,7 +105,6 @@ class MainActivity : ComponentActivity() {
         val lifecycleOwner = context as LifecycleOwner
         val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
         val executorService: ExecutorService = remember { Executors.newSingleThreadExecutor() }
-        Log.e("adgadgadf", "scanned A")
 
         AndroidView(
             factory = { ctx ->
@@ -120,31 +120,25 @@ class MainActivity : ComponentActivity() {
                     val cameraSelector = CameraSelector.Builder()
                         .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                         .build()
-                    Log.e("adgadgadf", "scanned B")
 
                     val preview = Preview.Builder().build().also {
                         it.setSurfaceProvider(previewView.surfaceProvider)
                     }
-                    Log.e("adgadgadf", "scanned C")
 
                     val imageAnalysis = ImageAnalysis.Builder()
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
-                    Log.e("adgadgadf", "scanned D")
 
                     imageAnalysis.setAnalyzer(executorService) { imageProxy ->
-                        Log.e("adgadgadf", "imageProxy "+imageProxy)
 
                         val result = scanQRCode(imageProxy)
                         result?.let {
                             onQRCodeScanned(it)
-                            Log.e("adgadgadf", "scanned "+it)
 
                             imageProxy.close()
 
                         }
                     }
-                    Log.e("adgadgadf", "scanned E")
 
                     try {
                         cameraProvider.unbindAll()
@@ -166,28 +160,42 @@ class MainActivity : ComponentActivity() {
         )
     }
     private var valueIs:String ?=null
-private fun apicallmarkattendance(){
-    lifecycleScope.launch {
-        Log.e("jadfadsf","B")
+    private var apiCalled = false
 
-        val result= valueIs?.let { ApiRepository().markMyAttendance( it.toLong(),52196542) }
-        Log.e("jadfadsf","C "+Gson().toJson(result))
+    private fun apicallmarkattendance(){
+        Log.e("adgadgadf", "check api called A $apiCalled")
 
-        result?.onSuccess { response ->
-            Log.e("jadfadsf","Check result "+Gson().toJson(response))
-            if(response.success){
-                Utils.showToast(this@MainActivity, response.message)
+        if(!apiCalled) {
+
+        apiCalled = true
+            Log.e("adgadgadf", "check api called B $apiCalled")
+
+            lifecycleScope.launch {
+
+            val result = valueIs?.let { ApiRepository().markMyAttendance(it, 34802363) }
+
+            result?.onSuccess { response ->
+
+                if (response.success) {
+                    Utils.showToast(this@MainActivity, response.message)
 
 
-            }else{
-                Utils.showToast(this@MainActivity, response.message)
+                } else {
+                    Utils.showToast(this@MainActivity, response.message)
 
+                }
+                delay(2000)
+                apiCalled = false
             }
-        }
 
-        result?.onFailure { exception ->
-            exception.message ?: "Something went wrong!"
-        }            }
+            result?.onFailure { exception ->
+                Utils.showToast(this@MainActivity, "Server problem")
+                delay(2000)
+                apiCalled = false
+            }
+
+        }
+    }
 }
     private fun scanQRCode(imageProxy: ImageProxy): String? {
         val width = imageProxy.width
@@ -217,13 +225,13 @@ private fun apicallmarkattendance(){
 
         return try {
             val result = MultiFormatReader().decode(binaryBitmap)
-            Log.e("QRCodeScanner", "QR Code decoding Result: ${result.text}")
-            Log.e("jadfadsf","A")
+            //Log.e("QRCodeScanner", "QR Code decoding Result: ${result.text}")
+           // Log.e("jadfadsf","A")
             result.text
 
 
         } catch (e: Exception) {
-            Log.e("QRCodeScanner", "QR Code decoding failed: ${e.message}")
+           // Log.e("QRCodeScanner", "QR Code decoding failed: ${e.message}")
             null
         } finally {
             imageProxy.close() // Close imageProxy after processing
